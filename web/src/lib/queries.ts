@@ -41,13 +41,6 @@ export function setRepeatMode(enabled: boolean) {
   return post('/repeat', body);
 }
 
-export function setSmoothing(enabled: boolean, factor: number) {
-  const body = new FormData();
-  body.append('enabled', enabled.toString());
-  body.append('factor', factor.toString());
-  return post('/smoothing', body);
-}
-
 export function print(g: string[], repeatMode = false) {
   const gcode = [...g];
   // Ensure tool is raised at end

@@ -9,13 +9,9 @@ export interface Config {
   minSpeed: number;
   maxSpeed: number;
   repeatMode: boolean;
-  smoothingEnabled: boolean;
-  smoothingFactor: number;
   L1: number;
   L2: number;
   L3: number;
   offsetX: number;
   offsetY: number;
-  ledEnabled: boolean;
-  buzzerEnabled: boolean;
 }
