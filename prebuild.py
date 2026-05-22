@@ -1,7 +1,15 @@
 import os
 import hashlib
+import subprocess
+import sys
 
-Import("env")
+# Check if running in PlatformIO context
+try:
+    Import("env")
+    IS_PLATFORMIO = True
+except NameError:
+    IS_PLATFORMIO = False
+    print("Running standalone (not in PlatformIO context)")
 
 paths = {
     "src": os.path.join("web", "dist"),
