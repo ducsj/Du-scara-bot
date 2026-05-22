@@ -25,18 +25,15 @@ jobs:
       run: python3 prebuild.py
 
     - name: Build ESP32 Firmware
-      run: pio run
-
-    - name: Create Merged Binary
-      run: python3 merge-bin.py
+      run: platformio run
 
     - name: List Built Files
-      run: ls -la .pio/build/esp32dev/
+      run: ls -la .pio/build/lolin_c3_mini/*.bin
 
     - name: Upload Firmware
       uses: actions/upload-artifact@v4
       with:
         name: esp32-drawing-robot-firmware
         path: |
-          .pio/build/esp32dev/merged.bin
+          .pio/build/lolin_c3_mini/firmware.bin
         retention-days: 30
