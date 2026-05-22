@@ -22,6 +22,7 @@ import { useGCode } from './reducers/gcode-reducer';
 import { Config } from './types/config';
 import { handleStopPropagation, downloadFile, readFile } from './lib/helpers';
 import { Slider } from './components/slider/slider';
+import { interpolateGcode } from './lib/interpolation';
 
 const initialConfig: Config = {
   minX: -50,
@@ -44,6 +45,8 @@ export function App() {
   const [repeatMode, setRepeatModeState] = useState(false);
   const [smoothingEnabled, setSmoothingEnabled] = useState(false);
   const [smoothingFactor, setSmoothingFactorState] = useState(0.3);
+  const [interpolationEnabled, setInterpolationEnabled] = useState(false);
+  const [interpolationLevel, setInterpolationLevel] = useState(5);
   const config = useQuery(getConfig, { initialData: initialConfig });
 
   useEffect(() => {
@@ -73,7 +76,10 @@ export function App() {
 
   const handleLoad = async () => {
     const content = await readFile(['gcode', 'txt']);
-    const lines = content.split('\n');
+    let lines = content.split('\n');
+    if (interpolationEnabled) {
+      lines = interpolateGcode(lines, interpolationLevel);
+    }
     setGCode(lines);
   };
 
@@ -81,7 +87,7 @@ export function App() {
     try {
       const response = await fetch(`/samples/${sampleName}`);
       const content = await response.text();
-      const lines = content.split('\n');
+      let lines = content.split('\n');
       setGCode(lines);
     } catch (error) {
       console.error('Failed to load sample:', error);
@@ -103,6 +109,22 @@ export function App() {
   const handleSmoothingFactorChange = (value: number) => {
     setSmoothingFactorState(value);
     setSmoothing(smoothingEnabled, value);
+  };
+
+  const handleInterpolationToggle = () => {
+    const newValue = !interpolationEnabled;
+    setInterpolationEnabled(newValue);
+  };
+
+  const handleInterpolationLevelChange = (value: number) => {
+    setInterpolationLevel(Math.round(value));
+  };
+
+  const handleApplyInterpolation = () => {
+    if (gcode.length > 0) {
+      const interpolated = interpolateGcode(gcode, interpolationLevel);
+      setGCode(interpolated);
+    }
   };
 
   const handlePrint = () => {
@@ -213,6 +235,36 @@ export function App() {
             fn={x => x.toFixed(1)}
           />
         )}
+      </Card>
+
+      <Card title="Interpolation (Smoothing)">
+        <ButtonGroup>
+          <Button
+            label={interpolationEnabled ? "Auto-Smooth: ON" : "Auto-Smooth: OFF"}
+            active={interpolationEnabled}
+            onClick={handleInterpolationToggle}
+          />
+          <Button
+            label="Apply Now"
+            onClick={handleApplyInterpolation}
+            disabled={!hasLines}
+          />
+        </ButtonGroup>
+
+        <Slider
+          label="Points per segment:"
+          value={interpolationLevel}
+          onChange={handleInterpolationLevelChange}
+          min={1}
+          max={20}
+          step={1}
+          fn={x => x.toString()}
+        />
+
+        <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+          Adds extra points between line segments for smoother curves.
+          Higher = smoother but more gcode lines.
+        </div>
       </Card>
 
       <Card title="Control">
