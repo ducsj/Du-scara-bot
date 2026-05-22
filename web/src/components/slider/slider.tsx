@@ -6,6 +6,7 @@ interface SliderProps {
   onChange: (value: number) => void;
   min?: number;
   max?: number;
+  step?: number;
   label?: string;
   fn?: (value: number) => string;
 }
@@ -15,6 +16,7 @@ export function Slider({
   onChange,
   min = 0,
   max = 100,
+  step = 1,
   label = '',
   fn = x => x.toString(),
 }: SliderProps) {
@@ -37,6 +39,7 @@ export function Slider({
           type="range"
           min={min}
           max={max}
+          step={step}
           value={internalValue}
           onInput={e =>
             setInternalValue((e.target as HTMLInputElement).valueAsNumber)

@@ -8,4 +8,7 @@ export interface Config {
   speed: number;
   minSpeed: number;
   maxSpeed: number;
+  repeatMode: boolean;
+  smoothingEnabled: boolean;
+  smoothingFactor: number;
 }

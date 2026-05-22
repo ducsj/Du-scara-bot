@@ -11,7 +11,24 @@ struct GCodeLine
 };
 
 extern String gCode;
+extern bool repeatMode;
+extern bool smoothingEnabled;
+extern float smoothingFactor;
 
 void setGCode(String newGCode);
 
+void setRepeatMode(bool enabled);
+
+bool getRepeatMode();
+
+void setSmoothingEnabled(bool enabled);
+
+bool getSmoothingEnabled();
+
+void setSmoothingFactor(float factor);
+
+float getSmoothingFactor();
+
 void machineLoop();
+
+void processGCode(String &code);

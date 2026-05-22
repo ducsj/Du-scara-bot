@@ -112,11 +112,39 @@ void setup()
       doc["speed"] = getSpeed();
       doc["minSpeed"] = MIN_SPEED;
       doc["maxSpeed"] = MAX_SPEED;
+      doc["repeatMode"] = getRepeatMode();
+      doc["smoothingEnabled"] = getSmoothingEnabled();
+      doc["smoothingFactor"] = getSmoothingFactor();
 
       serializeJson(doc, *response);
 
       request->send(response);
   });
+
+  server.on("/repeat", HTTP_POST, [](AsyncWebServerRequest *request)
+            {
+              if(request->hasParam("enabled", true))
+              {
+                String enabledStr = request->getParam("enabled", true)->value();
+                bool enabled = (enabledStr == "true" || enabledStr == "1");
+                setRepeatMode(enabled);
+                request->send(200, "text/plain", enabled ? "Repeat mode ON" : "Repeat mode OFF");
+              }
+              request->send(400, "text/plain", "Missing enabled parameter"); });
+
+  server.on("/smoothing", HTTP_POST, [](AsyncWebServerRequest *request)
+            {
+              if(request->hasParam("enabled", true) && request->hasParam("factor", true))
+              {
+                String enabledStr = request->getParam("enabled", true)->value();
+                String factorStr = request->getParam("factor", true)->value();
+                bool enabled = (enabledStr == "true" || enabledStr == "1");
+                float factor = factorStr.toFloat();
+                setSmoothingEnabled(enabled);
+                setSmoothingFactor(factor);
+                request->send(200, "text/plain", "OK");
+              }
+              request->send(400, "text/plain", "Missing parameters"); });
 
   server.on("/assembly", HTTP_POST, [](AsyncWebServerRequest *request)
             {

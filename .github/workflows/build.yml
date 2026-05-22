@@ -1,0 +1,55 @@
+name: Build ESP32 Drawing Robot Firmware
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install PlatformIO
+      run: pip install platformio
+
+    - name: Build Web Interface
+      run: |
+        cd web
+        npm install
+        npm run build
+
+    - name: Create Embedded Website
+      run: python3 prebuild.py
+
+    - name: Build ESP32 Firmware
+      run: pio run
+
+    - name: Create Merged Binary
+      run: |
+        python3 merge-bin.py
+        ls -la .pio/build/esp32dev/
+
+    - name: Upload Firmware
+      uses: actions/upload-artifact@v4
+      with:
+        name: esp32-drawing-robot-firmware
+        path: |
+          .pio/build/esp32dev/merged.bin
+          .pio/build/esp32dev/firmware.bin
+          .pio/build/esp32dev/partitions.bin
+          .pio/build/esp32dev/bootloader.bin
+        retention-days: 30

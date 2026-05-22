@@ -35,10 +35,25 @@ export function assembly() {
   return post('/assembly');
 }
 
-export function print(g: string[]) {
+export function setRepeatMode(enabled: boolean) {
+  return post('/repeat', null, { enabled: enabled.toString() });
+}
+
+export function setSmoothing(enabled: boolean, factor: number) {
+  return post('/smoothing', null, { 
+    enabled: enabled.toString(),
+    factor: factor.toString() 
+  });
+}
+
+export function print(g: string[], repeatMode = false) {
   const gcode = [...g];
   if (isToolLowered(gcode)) {
     gcode.push('M5');
+  }
+  
+  if (repeatMode) {
+    return sendGCode([...gcode]);
   }
   return sendGCode([...gcode, 'G28']);
 }

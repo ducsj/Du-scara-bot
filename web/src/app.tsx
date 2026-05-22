@@ -15,6 +15,8 @@ import {
   getConfig,
   print,
   setSpeed,
+  setRepeatMode,
+  setSmoothing,
 } from './lib/queries';
 import { useGCode } from './reducers/gcode-reducer';
 import { Config } from './types/config';
@@ -31,16 +33,26 @@ const initialConfig: Config = {
   speed: 100,
   minSpeed: 10,
   maxSpeed: 200,
+  repeatMode: false,
+  smoothingEnabled: false,
+  smoothingFactor: 0.3,
 };
 
 export function App() {
   const [toolPosition, setToolPosition] = useState<Position>({ x: 0, y: 0 });
   const { gcode, setGCode, addLine, clearAll, clearLine } = useGCode();
+  const [repeatMode, setRepeatModeState] = useState(false);
+  const [smoothingEnabled, setSmoothingEnabled] = useState(false);
+  const [smoothingFactor, setSmoothingFactorState] = useState(0.3);
   const config = useQuery(getConfig, { initialData: initialConfig });
 
   useEffect(() => {
-    if (config.data)
+    if (config.data) {
       setToolPosition({ x: config.data.homeX, y: config.data.homeY });
+      setRepeatModeState(config.data.repeatMode);
+      setSmoothingEnabled(config.data.smoothingEnabled);
+      setSmoothingFactorState(config.data.smoothingFactor);
+    }
   }, [config.data]);
 
   const handleHome = () => {
@@ -63,6 +75,27 @@ export function App() {
     const content = await readFile(['gcode', 'txt']);
     const lines = content.split('\n');
     setGCode(lines);
+  };
+
+  const handleRepeatModeToggle = () => {
+    const newValue = !repeatMode;
+    setRepeatModeState(newValue);
+    setRepeatMode(newValue);
+  };
+
+  const handleSmoothingToggle = () => {
+    const newValue = !smoothingEnabled;
+    setSmoothingEnabled(newValue);
+    setSmoothing(newValue, smoothingFactor);
+  };
+
+  const handleSmoothingFactorChange = (value: number) => {
+    setSmoothingFactorState(value);
+    setSmoothing(smoothingEnabled, value);
+  };
+
+  const handlePrint = () => {
+    print(gcode, repeatMode);
   };
 
   const hasLines = gcode.length > 0;
@@ -110,9 +143,37 @@ export function App() {
           <Button
             label="Print"
             disabled={!hasLines}
-            onClick={() => print(gcode)}
+            onClick={handlePrint}
           />
         </ButtonGroup>
+      </Card>
+
+      <Card title="Drawing Options">
+        <ButtonGroup>
+          <Button
+            label={repeatMode ? "Repeat: ON" : "Repeat: OFF"}
+            active={repeatMode}
+            onClick={handleRepeatModeToggle}
+            disabled={!hasLines}
+          />
+          <Button
+            label={smoothingEnabled ? "Smoothing: ON" : "Smoothing: OFF"}
+            active={smoothingEnabled}
+            onClick={handleSmoothingToggle}
+          />
+        </ButtonGroup>
+
+        {smoothingEnabled && (
+          <Slider
+            label="Smoothing Level:"
+            value={smoothingFactor}
+            onChange={handleSmoothingFactorChange}
+            min={0}
+            max={1}
+            step={0.1}
+            fn={x => x.toFixed(1)}
+          />
+        )}
       </Card>
 
       <Card title="Control">
