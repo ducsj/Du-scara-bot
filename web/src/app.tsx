@@ -66,6 +66,12 @@ export function App() {
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
   
+  // Debug tools
+  const [testX, setTestX] = useState(0);
+  const [testY, setTestY] = useState(25);
+  const [commandLog, setCommandLog] = useState<string[]>([]);
+  const [currentPos, setCurrentPos] = useState({x: 0, y: 0});
+  
   // LED and Buzzer
   const [ledEnabled, setLedEnabled] = useState(false);
   const [buzzerEnabled, setBuzzerEnabled] = useState(false);
@@ -220,6 +226,40 @@ export function App() {
     const body = new FormData();
     body.append('reset', 'true');
     post('/calibration', body);
+    addLog('Calibration reset to zero');
+  };
+
+  // Debug tool functions
+  const addLog = (message: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setCommandLog(prev => [...prev.slice(-49), `[${timestamp}] ${message}`]);
+  };
+
+  const handleGotoPoint = () => {
+    const cmd = `G0 X${testX} Y${testY}`;
+    addLog(`Testing point: X=${testX}, Y=${testY}`);
+    // Send via API
+    const body = new FormData();
+    body.append('gcode', cmd);
+    post('/gcode', body);
+  };
+
+  const handleRaiseAndGoto = () => {
+    const cmd = `M5\nG0 X${testX} Y${testY}\nM3`;
+    addLog(`Raise pen and goto: X=${testX}, Y=${testY}`);
+    const body = new FormData();
+    body.append('gcode', cmd);
+    post('/gcode', body);
+  };
+
+  const handleClearLog = () => {
+    setCommandLog([]);
+  };
+
+  const handleSetTestPoint = (x: number, y: number) => {
+    setTestX(x);
+    setTestY(y);
+    addLog(`Set test point: X=${x}, Y=${y}`);
   };
 
   const handlePrint = () => {
@@ -438,6 +478,61 @@ export function App() {
         
         <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
           LED indicator and buzzer for notifications. Beep plays a short sound.
+        </div>
+      </Card>
+
+      <Card title="Debug Tools">
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '12px' }}>
+          Test individual coordinates. Enter X/Y and click to move pen to that position.
+        </div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '12px' }}>
+          <NumberInput
+            label="X:"
+            value={testX}
+            onChange={(v) => setTestX(v)}
+            step={1}
+          />
+          <NumberInput
+            label="Y:"
+            value={testY}
+            onChange={(v) => setTestY(v)}
+            step={1}
+          />
+          <Button
+            label="✏️ Draw Here"
+            onClick={handleRaiseAndGoto}
+          />
+          <Button
+            label="🎯 Goto Only"
+            onClick={handleGotoPoint}
+          />
+        </div>
+        
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+          <Button label="Home (0,25)" onClick={() => handleSetTestPoint(0, 25)} />
+          <Button label="(-30, 50)" onClick={() => handleSetTestPoint(-30, 50)} />
+          <Button label="(30, 50)" onClick={() => handleSetTestPoint(30, 50)} />
+          <Button label="(0, 75)" onClick={() => handleSetTestPoint(0, 75)} />
+        </div>
+        
+        <div style={{ marginTop: '12px', borderTop: '1px solid #eee', paddingTop: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Command Log</span>
+            <Button label="Clear" onClick={handleClearLog} style={{ padding: '4px 8px', fontSize: '11px' }} />
+          </div>
+          <div style={{
+            background: '#1a1a2e',
+            color: '#0f0',
+            fontFamily: 'monospace',
+            fontSize: '11px',
+            padding: '8px',
+            borderRadius: '4px',
+            maxHeight: '120px',
+            overflowY: 'auto',
+            whiteSpace: 'pre-wrap'
+          }}>
+            {commandLog.length === 0 ? 'No commands yet...' : commandLog.join('\n')}
+          </div>
         </div>
       </Card>
 
