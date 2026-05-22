@@ -39,30 +39,22 @@ void setup()
   servoLeft.attach(servoLeftPin);
   servoRight.attach(servoRightPin);
 
-  // Initialize WiFi
-  Serial.println("Connecting to WiFi...");
-  WiFiManager wifiManager;
-  wifiManager.setConnectRetries(5);
-  wifiManager.setWiFiAutoReconnect(true);
-  wifiManager.setConnectTimeout(10);
-  WiFi.setSleep(WIFI_PS_NONE);
-  wifiManager.autoConnect();
-
-  Serial.println("\nWiFi connected.");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-
-  // Initialize mDNS with local domain
-  if (MDNS.begin(LOCAL_DOMAIN)) {
-    Serial.print("mDNS responder started. Access device at: http://");
-    Serial.print(LOCAL_DOMAIN);
-    Serial.println("/");
+  // Initialize WiFi in AP mode for first-time setup
+  Serial.println("Starting WiFi AP mode...");
+  WiFi.mode(WIFI_AP);
+  bool apStarted = WiFi.softAP("DrawBot", "12345678");
+  
+  if (apStarted) {
+    Serial.println("AP started successfully!");
+    Serial.print("AP IP address: ");
+    Serial.println(WiFi.softAPIP());
   } else {
-    Serial.println("Error setting up mDNS responder!");
+    Serial.println("ERROR: Failed to start AP!");
   }
 
-  Serial.println("Homing XY.");
-  homeXY();
+  Serial.println("Connect to WiFi: DrawBot");
+  Serial.println("Password: 12345678");
+  Serial.println("Then open: http://192.168.4.1 in your browser");
 
   // Define route handlers
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
