@@ -50,13 +50,15 @@ export function setSmoothing(enabled: boolean, factor: number) {
 
 export function print(g: string[], repeatMode = false) {
   const gcode = [...g];
+  // Ensure tool is raised at end
   if (isToolLowered(gcode)) {
     gcode.push('M5');
   }
   
   if (repeatMode) {
-    return sendGCode([...gcode]);
+    return sendGCode(gcode);
   }
+  // For non-repeat mode, add G28 (home) at end
   return sendGCode([...gcode, 'G28']);
 }
 

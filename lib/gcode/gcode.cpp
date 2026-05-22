@@ -195,10 +195,8 @@ void machineLoop()
 
     // Handle repeat mode - restart gcode when finished
     if (repeatMode && gCode.isEmpty() && !originalGCode.isEmpty()) {
-        Serial.println("Repeat mode: Restarting gcode (no homing)");
+        Serial.println("Repeat mode: Restarting gcode from original");
         gCode = originalGCode;
-        // Skip homing - continue from current position
-        // This allows continuous drawing without returning to home
         return;
     }
 
