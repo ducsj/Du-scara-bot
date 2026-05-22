@@ -109,9 +109,11 @@ void setPenPosition(const Position &position)
     bool canMove = calculateServoAngles(position, angles);
     bool canSet = setServoAngles(angles);
 
-    // In case of unreachable position, restart the ESP
+    // Just skip the move if position is unreachable
+    // Don't restart ESP - just ignore invalid positions
     if(!canMove || !canSet) {
-        ESP.restart();
+        Serial.println("Warning: Position out of range, skipping");
+        return;
     }
     
     currentPosition = position;
