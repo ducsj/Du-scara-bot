@@ -14,6 +14,8 @@ export interface Config {
   L1: number;
   L2: number;
   L3: number;
+  offsetX: number;
+  offsetY: number;
   ledEnabled: boolean;
   buzzerEnabled: boolean;
 }

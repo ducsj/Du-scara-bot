@@ -22,6 +22,7 @@ import { useGCode } from './reducers/gcode-reducer';
 import { Config } from './types/config';
 import { handleStopPropagation, downloadFile, readFile } from './lib/helpers';
 import { Slider } from './components/slider/slider';
+import { NumberInput } from './components/input/number-input';
 import { interpolateGcode } from './lib/interpolation';
 import { post } from './lib/http-client';
 
@@ -41,6 +42,8 @@ const initialConfig: Config = {
   L1: 25.8,
   L2: 60.0,
   L3: 70.0,
+  offsetX: 0,
+  offsetY: 0,
   ledEnabled: false,
   buzzerEnabled: false,
 };
@@ -59,6 +62,10 @@ export function App() {
   const [L2, setL2] = useState(60.0);
   const [L3, setL3] = useState(70.0);
   
+  // Calibration offset
+  const [offsetX, setOffsetX] = useState(0);
+  const [offsetY, setOffsetY] = useState(0);
+  
   // LED and Buzzer
   const [ledEnabled, setLedEnabled] = useState(false);
   const [buzzerEnabled, setBuzzerEnabled] = useState(false);
@@ -74,6 +81,8 @@ export function App() {
       setL1(config.data.L1 || 25.8);
       setL2(config.data.L2 || 60.0);
       setL3(config.data.L3 || 70.0);
+      setOffsetX(config.data.offsetX || 0);
+      setOffsetY(config.data.offsetY || 0);
       setLedEnabled(config.data.ledEnabled || false);
       setBuzzerEnabled(config.data.buzzerEnabled || false);
     }
@@ -189,6 +198,28 @@ export function App() {
     const body = new FormData();
     body.append('L3', value.toString());
     post('/geometry', body);
+  };
+
+  const handleOffsetXChange = (value: number) => {
+    setOffsetX(value);
+    const body = new FormData();
+    body.append('offsetX', value.toString());
+    post('/calibration', body);
+  };
+
+  const handleOffsetYChange = (value: number) => {
+    setOffsetY(value);
+    const body = new FormData();
+    body.append('offsetY', value.toString());
+    post('/calibration', body);
+  };
+
+  const handleResetCalibration = () => {
+    setOffsetX(0);
+    setOffsetY(0);
+    const body = new FormData();
+    body.append('reset', 'true');
+    post('/calibration', body);
   };
 
   const handlePrint = () => {
@@ -332,36 +363,59 @@ export function App() {
       </Card>
 
       <Card title="Robot Geometry">
-        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '12px' }}>
           Adjust arm lengths to match your physical robot. Changes take effect on next move.
         </div>
-        <Slider
-          label="L1 (Servo distance):"
-          value={L1}
-          onChange={handleL1Change}
-          min={10}
-          max={50}
-          step={0.5}
-          fn={x => x.toFixed(1) + ' mm'}
-        />
-        <Slider
-          label="L2 (Arm 1 length):"
-          value={L2}
-          onChange={handleL2Change}
-          min={30}
-          max={100}
-          step={1}
-          fn={x => x.toFixed(0) + ' mm'}
-        />
-        <Slider
-          label="L3 (Arm 2 length):"
-          value={L3}
-          onChange={handleL3Change}
-          min={30}
-          max={120}
-          step={1}
-          fn={x => x.toFixed(0) + ' mm'}
-        />
+        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+          <NumberInput
+            label="L1 (Servo distance):"
+            value={L1}
+            onChange={handleL1Change}
+            unit="mm"
+            step={0.1}
+          />
+          <NumberInput
+            label="L2 (Arm 1 length):"
+            value={L2}
+            onChange={handleL2Change}
+            unit="mm"
+          />
+          <NumberInput
+            label="L3 (Arm 2 length):"
+            value={L3}
+            onChange={handleL3Change}
+            unit="mm"
+          />
+        </div>
+      </Card>
+
+      <Card title="Calibration">
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '12px' }}>
+          Adjust X/Y offset to correct position errors. Positive values move pen right/up.
+        </div>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <NumberInput
+            label="X Offset:"
+            value={offsetX}
+            onChange={handleOffsetXChange}
+            unit="mm"
+            step={0.1}
+          />
+          <NumberInput
+            label="Y Offset:"
+            value={offsetY}
+            onChange={handleOffsetYChange}
+            unit="mm"
+            step={0.1}
+          />
+          <Button
+            label="Reset to Zero"
+            onClick={handleResetCalibration}
+          />
+        </div>
+        <div style={{ fontSize: '11px', color: '#888', marginTop: '8px' }}>
+          Tip: Draw a square, measure error, adjust offset accordingly.
+        </div>
       </Card>
 
       <Card title="LED & Buzzer">

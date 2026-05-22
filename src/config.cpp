@@ -6,6 +6,10 @@ float L1 = 25.8;  // Distance between the two servos (mm)
 float L2 = 60.0;  // Length of the first arm connected to servo (mm)
 float L3 = 70.0;  // Length of the second arm connected to the pen (mm)
 
+// Calibration offset (mm)
+float offsetX = 0;  // X offset for position correction
+float offsetY = 0;  // Y offset for position correction
+
 // Lift positions
 int LIFT_DOWN_ANGLE = 120;  // Lift down angle
 int LIFT_UP_ANGLE = 172;   // Lift up angle

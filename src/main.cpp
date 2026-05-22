@@ -137,6 +137,10 @@ void setup()
       doc["L2"] = L2;  // First arm length
       doc["L3"] = L3;  // Second arm length
       
+      // Calibration offsets
+      doc["offsetX"] = offsetX;
+      doc["offsetY"] = offsetY;
+      
       // LED and Buzzer
       doc["ledEnabled"] = ledEnabled;
       doc["ledR"] = ledR;
@@ -171,6 +175,32 @@ void setup()
         request->send(200, "text/plain", "Geometry updated");
       } else {
         request->send(400, "text/plain", "Missing geometry parameter");
+      }
+  });
+
+  // Calibration endpoint
+  server.on("/calibration", HTTP_POST, [](AsyncWebServerRequest *request) {
+      bool updated = false;
+      
+      if (request->hasParam("offsetX", true)) {
+        offsetX = request->getParam("offsetX", true)->value().toFloat();
+        updated = true;
+      }
+      if (request->hasParam("offsetY", true)) {
+        offsetY = request->getParam("offsetY", true)->value().toFloat();
+        updated = true;
+      }
+      if (request->hasParam("reset", true)) {
+        offsetX = 0;
+        offsetY = 0;
+        updated = true;
+      }
+      
+      if (updated) {
+        Serial.printf("Calibration updated: offsetX=%.1f, offsetY=%.1f\n", offsetX, offsetY);
+        request->send(200, "text/plain", "Calibration updated");
+      } else {
+        request->send(400, "text/plain", "Missing calibration parameter");
       }
   });
 

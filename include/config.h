@@ -8,6 +8,10 @@ extern float L1; // Distance between the two servos (mm)
 extern float L2; // Length of the first arm connected to servo (mm)
 extern float L3; // Length of the second arm connected to the pen (mm)
 
+// Calibration offset (mm)
+extern float offsetX;  // X offset for position correction
+extern float offsetY;  // Y offset for position correction
+
 // Lift positions
 extern int LIFT_DOWN_ANGLE; // Lift down angle
 extern int LIFT_UP_ANGLE;   // Lift up angle

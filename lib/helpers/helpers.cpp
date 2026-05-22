@@ -46,9 +46,9 @@ float distanceBetweenPoints(const Position &p1, const Position &p2)
 // Function to calculate servo angles
 bool calculateServoAngles(const Position &position, Angles &angles)
 {
-    // Invert x axis
-    int x = -position.x;
-    int y = position.y;
+    // Invert x axis and apply calibration offset
+    int x = -position.x + offsetX;
+    int y = position.y + offsetY;
 
     if (x < MIN_X || x > MAX_X || y < MIN_Y || y > MAX_Y)
     {
