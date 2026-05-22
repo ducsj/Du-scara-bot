@@ -23,6 +23,7 @@ import { Config } from './types/config';
 import { handleStopPropagation, downloadFile, readFile } from './lib/helpers';
 import { Slider } from './components/slider/slider';
 import { interpolateGcode } from './lib/interpolation';
+import { post } from './lib/http-client';
 
 const initialConfig: Config = {
   minX: -50,
@@ -37,6 +38,11 @@ const initialConfig: Config = {
   repeatMode: false,
   smoothingEnabled: false,
   smoothingFactor: 0.3,
+  L1: 25.8,
+  L2: 60.0,
+  L3: 70.0,
+  ledEnabled: false,
+  buzzerEnabled: false,
 };
 
 export function App() {
@@ -47,6 +53,16 @@ export function App() {
   const [smoothingFactor, setSmoothingFactorState] = useState(0.3);
   const [interpolationEnabled, setInterpolationEnabled] = useState(false);
   const [interpolationLevel, setInterpolationLevel] = useState(5);
+  
+  // Geometry parameters
+  const [L1, setL1] = useState(25.8);
+  const [L2, setL2] = useState(60.0);
+  const [L3, setL3] = useState(70.0);
+  
+  // LED and Buzzer
+  const [ledEnabled, setLedEnabled] = useState(false);
+  const [buzzerEnabled, setBuzzerEnabled] = useState(false);
+  
   const config = useQuery(getConfig, { initialData: initialConfig });
 
   useEffect(() => {
@@ -55,6 +71,11 @@ export function App() {
       setRepeatModeState(config.data.repeatMode);
       setSmoothingEnabled(config.data.smoothingEnabled);
       setSmoothingFactorState(config.data.smoothingFactor);
+      setL1(config.data.L1 || 25.8);
+      setL2(config.data.L2 || 60.0);
+      setL3(config.data.L3 || 70.0);
+      setLedEnabled(config.data.ledEnabled || false);
+      setBuzzerEnabled(config.data.buzzerEnabled || false);
     }
   }, [config.data]);
 
@@ -125,6 +146,49 @@ export function App() {
       const interpolated = interpolateGcode(gcode, interpolationLevel);
       setGCode(interpolated);
     }
+  };
+
+  const handleLedToggle = () => {
+    const newValue = !ledEnabled;
+    setLedEnabled(newValue);
+    const body = new FormData();
+    body.append('state', newValue ? 'on' : 'off');
+    post('/led', body);
+  };
+
+  const handleBuzzerToggle = () => {
+    const newValue = !buzzerEnabled;
+    setBuzzerEnabled(newValue);
+    const body = new FormData();
+    body.append('state', newValue ? 'on' : 'off');
+    post('/buzzer', body);
+  };
+
+  const handleBuzzerBeep = () => {
+    const body = new FormData();
+    body.append('beep', '200');
+    post('/buzzer', body);
+  };
+
+  const handleL1Change = (value: number) => {
+    setL1(value);
+    const body = new FormData();
+    body.append('L1', value.toString());
+    post('/geometry', body);
+  };
+
+  const handleL2Change = (value: number) => {
+    setL2(value);
+    const body = new FormData();
+    body.append('L2', value.toString());
+    post('/geometry', body);
+  };
+
+  const handleL3Change = (value: number) => {
+    setL3(value);
+    const body = new FormData();
+    body.append('L3', value.toString());
+    post('/geometry', body);
   };
 
   const handlePrint = () => {
@@ -264,6 +328,62 @@ export function App() {
         <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
           Adds extra points between line segments for smoother curves.
           Higher = smoother but more gcode lines.
+        </div>
+      </Card>
+
+      <Card title="Robot Geometry">
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+          Adjust arm lengths to match your physical robot. Changes take effect on next move.
+        </div>
+        <Slider
+          label="L1 (Servo distance):"
+          value={L1}
+          onChange={handleL1Change}
+          min={10}
+          max={50}
+          step={0.5}
+          fn={x => x.toFixed(1) + ' mm'}
+        />
+        <Slider
+          label="L2 (Arm 1 length):"
+          value={L2}
+          onChange={handleL2Change}
+          min={30}
+          max={100}
+          step={1}
+          fn={x => x.toFixed(0) + ' mm'}
+        />
+        <Slider
+          label="L3 (Arm 2 length):"
+          value={L3}
+          onChange={handleL3Change}
+          min={30}
+          max={120}
+          step={1}
+          fn={x => x.toFixed(0) + ' mm'}
+        />
+      </Card>
+
+      <Card title="LED & Buzzer">
+        <ButtonGroup>
+          <Button
+            label={ledEnabled ? "LED: ON" : "LED: OFF"}
+            active={ledEnabled}
+            onClick={handleLedToggle}
+          />
+          <Button
+            label={buzzerEnabled ? "Buzzer: ON" : "Buzzer: OFF"}
+            active={buzzerEnabled}
+            onClick={handleBuzzerToggle}
+          />
+          <Button
+            label="🔊 Beep"
+            onClick={handleBuzzerBeep}
+          />
+        </ButtonGroup>
+        
+        <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+          LED indicator and buzzer for notifications. Beep plays a short sound.
         </div>
       </Card>
 

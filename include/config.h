@@ -3,28 +3,28 @@
 #include <Arduino.h>
 #include <types.h>
 
-// Robot geometry constants
-const float L1 = 25.8; // Distance between the two servos (mm)
-const float L2 = 60.0; // Length of the first arm connected to servo (mm)
-const float L3 = 70.0; // Length of the second arm connected to the pen (mm)
+// Robot geometry - Default values (can be changed via API)
+extern float L1; // Distance between the two servos (mm)
+extern float L2; // Length of the first arm connected to servo (mm)
+extern float L3; // Length of the second arm connected to the pen (mm)
 
 // Lift positions
-const int LIFT_DOWN_ANGLE = 120; // Lift down angle
-const int LIFT_UP_ANGLE = 172;   // Lift up angle
-const int LIFT_WAIT = 300;       // Lift wait time
+extern int LIFT_DOWN_ANGLE; // Lift down angle
+extern int LIFT_UP_ANGLE;   // Lift up angle
+extern int LIFT_WAIT;       // Lift wait time
 
 // Constraints for the pen position
-const float MIN_Y = 25;  // Minimum Y position
-const float MAX_Y = 125; // Maximum Y position
-const float MIN_X = -50; // Minimum X position
-const float MAX_X = 50;  // Maximum X position
+extern float MIN_Y;  // Minimum Y position
+extern float MAX_Y; // Maximum Y position
+extern float MIN_X; // Minimum X position
+extern float MAX_X;  // Maximum X position
 
-const Position HOMING_POSITION = {x : 0, y : MIN_Y}; // Homing position
+extern Position HOMING_POSITION; // Homing position
 
 // Speed
-const float MIN_SPEED = 10; // Minimum speed mm/s
-const float MAX_SPEED = 300; // Maximum speed mm/s
-const float DEFAULT_SPEED = 100; // Velocity of the pen mm/s
+extern float MIN_SPEED; // Minimum speed mm/s
+extern float MAX_SPEED; // Maximum speed mm/s
+extern float DEFAULT_SPEED; // Velocity of the pen mm/s
 
 // Tolerance for comparing positions
 const float MAX_DELTA = 0.1;
@@ -33,6 +33,10 @@ const float MAX_DELTA = 0.1;
 static const int liftServoPin = GPIO_NUM_0;
 static const int servoLeftPin = GPIO_NUM_2;
 static const int servoRightPin = GPIO_NUM_1;
+
+// LED and Buzzer pins
+static const int ledPin = GPIO_NUM_10;        // Built-in RGB LED (or custom)
+static const int buzzerPin = GPIO_NUM_21;     // Buzzer pin
 
 // Local domain name (mDNS hostname)
 extern const char* LOCAL_DOMAIN;

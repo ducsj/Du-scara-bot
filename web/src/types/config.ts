@@ -11,4 +11,9 @@ export interface Config {
   repeatMode: boolean;
   smoothingEnabled: boolean;
   smoothingFactor: number;
+  L1: number;
+  L2: number;
+  L3: number;
+  ledEnabled: boolean;
+  buzzerEnabled: boolean;
 }

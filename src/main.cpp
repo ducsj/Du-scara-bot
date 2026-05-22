@@ -18,10 +18,23 @@ const char* LOCAL_DOMAIN = "draw.local";
 // WiFi and server setup
 AsyncWebServer server(80);
 
+// LED states
+int ledR = 0, ledG = 0, ledB = 0;
+bool ledEnabled = false;
+
+// Buzzer state
+bool buzzerEnabled = false;
+
 void setup()
 {
   Serial.begin(115200);
-
+  
+  // Initialize LED and buzzer pins
+  pinMode(ledPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
+  digitalWrite(ledPin, LOW);  // LED off
+  digitalWrite(buzzerPin, LOW);  // Buzzer off
+  
   servoLift.attach(liftServoPin);
   servoLeft.attach(servoLeftPin);
   servoRight.attach(servoRightPin);
@@ -118,10 +131,123 @@ void setup()
       doc["repeatMode"] = getRepeatMode();
       doc["smoothingEnabled"] = getSmoothingEnabled();
       doc["smoothingFactor"] = getSmoothingFactor();
+      
+      // Geometry parameters
+      doc["L1"] = L1;  // Distance between servos
+      doc["L2"] = L2;  // First arm length
+      doc["L3"] = L3;  // Second arm length
+      
+      // LED and Buzzer
+      doc["ledEnabled"] = ledEnabled;
+      doc["ledR"] = ledR;
+      doc["ledG"] = ledG;
+      doc["ledB"] = ledB;
+      doc["buzzerEnabled"] = buzzerEnabled;
 
       serializeJson(doc, *response);
 
       request->send(response);
+  });
+
+  // Geometry configuration (arm lengths)
+  server.on("/geometry", HTTP_POST, [](AsyncWebServerRequest *request) {
+      bool updated = false;
+      
+      if (request->hasParam("L1", true)) {
+        L1 = request->getParam("L1", true)->value().toFloat();
+        updated = true;
+      }
+      if (request->hasParam("L2", true)) {
+        L2 = request->getParam("L2", true)->value().toFloat();
+        updated = true;
+      }
+      if (request->hasParam("L3", true)) {
+        L3 = request->getParam("L3", true)->value().toFloat();
+        updated = true;
+      }
+      
+      if (updated) {
+        Serial.printf("Geometry updated: L1=%.1f, L2=%.1f, L3=%.1f\n", L1, L2, L3);
+        request->send(200, "text/plain", "Geometry updated");
+      } else {
+        request->send(400, "text/plain", "Missing geometry parameter");
+      }
+  });
+
+  // LED control
+  server.on("/led", HTTP_POST, [](AsyncWebServerRequest *request) {
+      if (request->hasParam("r", true) && request->hasParam("g", true) && request->hasParam("b", true)) {
+        ledR = request->getParam("r", true)->value().toInt();
+        ledG = request->getParam("g", true)->value().toInt();
+        ledB = request->getParam("b", true)->value().toInt();
+        
+        // For single color LED (on ESP32-C3, just use digital on/off)
+        // For RGB, you would need PWM pins - this is simplified
+        if (ledR > 0 || ledG > 0 || ledB > 0) {
+          digitalWrite(ledPin, HIGH);
+          ledEnabled = true;
+        } else {
+          digitalWrite(ledPin, LOW);
+          ledEnabled = false;
+        }
+        
+        Serial.printf("LED: R=%d, G=%d, B=%d\n", ledR, ledG, ledB);
+        request->send(200, "text/plain", "LED updated");
+      } else if (request->hasParam("state", true)) {
+        String state = request->getParam("state", true)->value();
+        if (state == "on") {
+          digitalWrite(ledPin, HIGH);
+          ledEnabled = true;
+          request->send(200, "text/plain", "LED ON");
+        } else if (state == "off") {
+          digitalWrite(ledPin, LOW);
+          ledEnabled = false;
+          request->send(200, "text/plain", "LED OFF");
+        } else {
+          request->send(400, "text/plain", "Invalid state");
+        }
+      } else {
+        request->send(400, "text/plain", "Missing parameters");
+      }
+  });
+
+  // Buzzer control
+  server.on("/buzzer", HTTP_POST, [](AsyncWebServerRequest *request) {
+      if (request->hasParam("state", true)) {
+        String state = request->getParam("state", true)->value();
+        if (state == "on") {
+          digitalWrite(buzzerPin, HIGH);
+          buzzerEnabled = true;
+          request->send(200, "text/plain", "Buzzer ON");
+        } else if (state == "off") {
+          digitalWrite(buzzerPin, LOW);
+          buzzerEnabled = false;
+          request->send(200, "text/plain", "Buzzer OFF");
+        } else {
+          request->send(400, "text/plain", "Invalid state");
+        }
+      } else if (request->hasParam("beep", true)) {
+        int duration = request->getParam("beep", true)->value().toInt();
+        digitalWrite(buzzerPin, HIGH);
+        delay(duration);
+        digitalWrite(buzzerPin, LOW);
+        buzzerEnabled = false;
+        request->send(200, "text/plain", "Beep!");
+      } else {
+        request->send(400, "text/plain", "Missing parameters");
+      }
+  });
+
+  // Sound notification (plays after drawing)
+  server.on("/sound", HTTP_POST, [](AsyncWebServerRequest *request) {
+      // Play a little tune on completion
+      for (int i = 0; i < 3; i++) {
+        digitalWrite(buzzerPin, HIGH);
+        delay(100);
+        digitalWrite(buzzerPin, LOW);
+        delay(50);
+      }
+      request->send(200, "text/plain", "Sound played!");
   });
 
   server.on("/repeat", HTTP_POST, [](AsyncWebServerRequest *request)
