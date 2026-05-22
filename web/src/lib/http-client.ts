@@ -16,19 +16,23 @@ export function get<T>(url: string, options?: RequestInit): Promise<T> {
   return request(url, options);
 }
 
-export function post<T, D extends Record<string, unknown>>(
+export function post<T>(
   url: string,
-  data?: D,
-  options?: RequestInit,
+  data?: FormData | Record<string, unknown>,
 ): Promise<T> {
-  const body = new FormData();
-  for (const key in data) {
-    body.append(key, data[key] as string | Blob);
+  let body: FormData | undefined;
+
+  if (data instanceof FormData) {
+    body = data;
+  } else if (data) {
+    body = new FormData();
+    for (const key in data) {
+      body.append(key, data[key] as string | Blob);
+    }
   }
 
   return request(url, {
     method: 'POST',
-    body: data ? body : undefined,
-    ...options,
+    body,
   });
 }

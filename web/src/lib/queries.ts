@@ -36,14 +36,16 @@ export function assembly() {
 }
 
 export function setRepeatMode(enabled: boolean) {
-  return post('/repeat', null, { enabled: enabled.toString() });
+  const body = new FormData();
+  body.append('enabled', enabled.toString());
+  return post('/repeat', body);
 }
 
 export function setSmoothing(enabled: boolean, factor: number) {
-  return post('/smoothing', null, { 
-    enabled: enabled.toString(),
-    factor: factor.toString() 
-  });
+  const body = new FormData();
+  body.append('enabled', enabled.toString());
+  body.append('factor', factor.toString());
+  return post('/smoothing', body);
 }
 
 export function print(g: string[], repeatMode = false) {
