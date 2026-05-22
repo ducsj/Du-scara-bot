@@ -109,14 +109,17 @@ void setPenPosition(const Position &position)
     bool canMove = calculateServoAngles(position, angles);
     bool canSet = setServoAngles(angles);
 
-    // Just skip the move if position is unreachable
-    // Don't restart ESP - just ignore invalid positions
-    if(!canMove || !canSet) {
-        Serial.println("Warning: Position out of range, skipping");
-        return;
-    }
-    
+    // Even if position is slightly out of range, try to move there
+    // Update currentPosition and let servo handle limits
     currentPosition = position;
+    
+    // Always try to set servo angles
+    if (canSet) {
+        servoLeft.write(map(angles.left * 100, 0, 18000, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH));
+        servoRight.write(map(angles.right * 100, 0, 18000, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH));
+    } else {
+        Serial.println("Warning: Invalid servo angles");
+    }
 }
 
 void updateLinearMove(float delta)

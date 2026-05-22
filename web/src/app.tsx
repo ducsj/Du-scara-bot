@@ -42,7 +42,7 @@ const initialConfig: Config = {
 
 export function App() {
   const [toolPosition, setToolPosition] = useState<Position>({ x: 0, y: 0 });
-  const { gcode, setGCode, clearAll, clearLine } = useGCode();
+  const { gcode, setGCode, clearAll, clearLine, addLine } = useGCode();
   const [repeatMode, setRepeatModeState] = useState(false);
   
   const config = useQuery(getConfig, { initialData: initialConfig });
@@ -76,6 +76,11 @@ export function App() {
     setGCode(lines);
   };
 
+  const handleAddGCode = (line: string | string[]) => {
+    const lines = Array.isArray(line) ? line : [line];
+    lines.forEach(l => addLine(l));
+  };
+
   const handleRepeatModeToggle = () => {
     const newValue = !repeatMode;
     setRepeatModeState(newValue);
@@ -104,7 +109,7 @@ export function App() {
             toolPosition={toolPosition}
             setToolPosition={handleSetPosition}
             gcode={gcode}
-            addGCode={() => {}}
+            addGCode={handleAddGCode}
           />
         )}
 
