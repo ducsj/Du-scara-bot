@@ -77,6 +77,17 @@ export function App() {
     setGCode(lines);
   };
 
+  const handleLoadSample = async (sampleName: string) => {
+    try {
+      const response = await fetch(`/samples/${sampleName}`);
+      const content = await response.text();
+      const lines = content.split('\n');
+      setGCode(lines);
+    } catch (error) {
+      console.error('Failed to load sample:', error);
+    }
+  };
+
   const handleRepeatModeToggle = () => {
     const newValue = !repeatMode;
     setRepeatModeState(newValue);
@@ -144,6 +155,34 @@ export function App() {
             label="Print"
             disabled={!hasLines}
             onClick={handlePrint}
+          />
+        </ButtonGroup>
+
+        <hr />
+
+        <div style={{ marginBottom: '8px', fontSize: '14px', color: '#666' }}>
+          Sample Patterns (Pre-smoothed G-code):
+        </div>
+        <ButtonGroup>
+          <Button
+            label="Triangle"
+            onClick={() => handleLoadSample('triangle-smooth.gcode')}
+          />
+          <Button
+            label="Square"
+            onClick={() => handleLoadSample('square-smooth.gcode')}
+          />
+          <Button
+            label="Circle"
+            onClick={() => handleLoadSample('circle-smooth.gcode')}
+          />
+          <Button
+            label="Heart"
+            onClick={() => handleLoadSample('heart-smooth.gcode')}
+          />
+          <Button
+            label="Wave"
+            onClick={() => handleLoadSample('wave-smooth.gcode')}
           />
         </ButtonGroup>
       </Card>
