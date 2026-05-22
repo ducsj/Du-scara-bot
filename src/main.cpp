@@ -12,6 +12,9 @@
 // Website
 #include <web/index_gz.h>
 
+// Local domain definition
+const char* LOCAL_DOMAIN = "draw.local";
+
 // WiFi and server setup
 AsyncWebServer server(80);
 
