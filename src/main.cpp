@@ -12,6 +12,9 @@
 // Website
 #include <web/index_gz.h>
 
+// Sample G-code patterns
+#include <samples.h>
+
 // Local domain definition
 const char* LOCAL_DOMAIN = "draw.local";
 
@@ -77,6 +80,28 @@ void setup()
 
     Serial.println("No ETag found or mismatch. Sending 200");
     request->send(response); });
+
+  // Serve sample G-code files
+  server.on("/samples/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    String path = request->url();
+    String filename = path.substring(9);  // Remove "/samples/" prefix
+    
+    Serial.printf("Sample request: %s\n", filename.c_str());
+    
+    // Find matching sample
+    for (int i = 0; i < SAMPLES_COUNT; i++) {
+      SampleGcode sample;
+      memcpy_P(&sample, &SAMPLES[i], sizeof(SampleGcode));
+      
+      if (filename.equals(sample.name)) {
+        Serial.printf("Serving sample: %s\n", sample.name);
+        request->send(200, "text/plain", sample.gcode);
+        return;
+      }
+    }
+    
+    request->send(404, "text/plain", "Sample not found");
+  });
 
   server.on("/gcode", HTTP_POST, [](AsyncWebServerRequest *request)
             {
