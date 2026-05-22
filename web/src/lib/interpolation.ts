@@ -138,80 +138,24 @@ function createGcodeLine(x: number, y: number): string {
  */
 export function interpolateGcode(
   lines: string[],
-  pointsPerSegment: number = 5,
+  pointsPerSegment: number = 2,
   useCatmullRom: boolean = false
 ): string[] {
-  const result: string[] = [];
+  // Simple linear interpolation: add 1 point between each segment
+  const interpolated: string[] = [];
   let lastX = 0;
   let lastY = 0;
   let lastToolDown = false;
-
-  // Parse all lines and extract G1 points
-  const g1Points: Point[] = [];
-  const g1Indices: number[] = [];
-
-  lines.forEach((line, index) => {
-    const parsed = parseGcodeLine(line);
-    
-    if (parsed.command === 'M3' || parsed.command === 'M03') {
-      lastToolDown = true;
-      result.push(line);
-    } else if (parsed.command === 'M5' || parsed.command === 'M05') {
-      lastToolDown = false;
-      result.push(line);
-    } else if (parsed.command === 'G1' && parsed.x !== undefined && parsed.y !== undefined) {
-      if (lastToolDown) {
-        g1Points.push({ x: parsed.x, y: parsed.y });
-        g1Indices.push(result.length);
-      }
-      lastX = parsed.x;
-      lastY = parsed.y;
-      result.push(line);
-    } else if (parsed.command === 'G0') {
-      // Rapid move - don't interpolate
-      lastX = parsed.x ?? lastX;
-      lastY = parsed.y ?? lastY;
-      lastToolDown = false;
-      result.push(line);
-    } else if (parsed.command === 'G2' || parsed.command === 'G3') {
-      // Arc command - add interpolated points
-      if (parsed.x !== undefined && parsed.y !== undefined && parsed.i !== undefined && parsed.j !== undefined) {
-        const startPoint = { x: lastX, y: lastY };
-        const endPoint = { x: parsed.x, y: parsed.y };
-        const arcPoints = interpolateArc(
-          startPoint.x, startPoint.y,
-          endPoint.x, endPoint.y,
-          parsed.i, parsed.j,
-          parsed.command === 'G2',
-          pointsPerSegment
-        );
-        
-        arcPoints.forEach(point => {
-          result.push(createGcodeLine(point.x, point.y));
-        });
-        lastX = parsed.x;
-        lastY = parsed.y;
-      }
-      result.push(line);
-    } else if (parsed.command.startsWith('G') || parsed.command.startsWith('M')) {
-      result.push(line);
-    }
-  });
-
-  // Now do the interpolation - rebuild with extra points
-  if (g1Points.length < 2) {
-    return result;
-  }
-
-  const interpolated: string[] = [];
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const parsed = parseGcodeLine(line);
     
     if (parsed.command === 'M3' || parsed.command === 'M03') {
+      lastToolDown = true;
       interpolated.push(line);
     } else if (parsed.command === 'M5' || parsed.command === 'M05') {
+      lastToolDown = false;
       interpolated.push(line);
     } else if (parsed.command === 'G0') {
       lastToolDown = false;
@@ -224,42 +168,23 @@ export function interpolateGcode(
       const endX = parsed.x ?? lastX;
       const endY = parsed.y ?? lastY;
 
-      if (lastToolDown) {
-        // Add interpolated points
-        for (let t = 0; t <= pointsPerSegment; t++) {
-          const ratio = t / (pointsPerSegment + 1);
-          const x = lerp(startX, endX, ratio);
-          const y = lerp(startY, endY, ratio);
-          interpolated.push(createGcodeLine(x, y));
-        }
-      } else {
-        // First point after tool down
-        lastToolDown = true;
-        interpolated.push(line);
+      if (lastToolDown && (startX !== endX || startY !== endY)) {
+        // Add 1 intermediate point (simple linear interpolation)
+        const midX = (startX + endX) / 2;
+        const midY = (startY + endY) / 2;
+        interpolated.push(createGcodeLine(midX, midY));
       }
+      interpolated.push(line);
 
       lastX = endX;
       lastY = endY;
     } else if (parsed.command === 'G2' || parsed.command === 'G3') {
-      // Arc command
-      if (parsed.x !== undefined && parsed.y !== undefined && parsed.i !== undefined && parsed.j !== undefined) {
-        const startPoint = { x: lastX, y: lastY };
-        const endPoint = { x: parsed.x, y: parsed.y };
-        const arcPoints = interpolateArc(
-          startPoint.x, startPoint.y,
-          endPoint.x, endPoint.y,
-          parsed.i, parsed.j,
-          parsed.command === 'G2',
-          pointsPerSegment
-        );
-        
-        arcPoints.forEach(point => {
-          interpolated.push(createGcodeLine(point.x, point.y));
-        });
+      // Arc command - pass through unchanged (ESP32 handles arc)
+      interpolated.push(line);
+      if (parsed.x !== undefined && parsed.y !== undefined) {
         lastX = parsed.x;
         lastY = parsed.y;
       }
-      interpolated.push(line);
     } else {
       // Other commands (comments, etc.)
       interpolated.push(line);
